@@ -50,9 +50,24 @@ public class MessagingService extends FirebaseMessagingService {
     }
     Map<String, String> data = remoteMessage.getData();
     String customNotification = data.get("custom_notification");
+    String dataChannel =        data.get("channel");
+    String dataType =           data.get("type");
+    String dataSender =         data.get("sender");
+    String dataId =             data.get("id");
+
     if(customNotification != null){
       try {
-        Bundle bundle = BundleJSONConverter.convertToBundle(new JSONObject(customNotification));
+        JSONObject jsonobj = new JSONObject(customNotification);
+        if(dataChannel != null)
+          jsonobj.put("channel", dataChannel);
+        if(dataType != null)
+          jsonobj.put("type", dataType);
+        if(dataSender != null)
+          jsonobj.put("sender", dataSender);
+        if(dataId != null)
+          jsonobj.put("id", dataId);
+        Bundle bundle = BundleJSONConverter.convertToBundle(jsonobj);
+
         RNFirebaseLocalMessagingHelper helper = new RNFirebaseLocalMessagingHelper(this.getApplication());
         helper.sendNotification(bundle);
       } catch (JSONException e) {
