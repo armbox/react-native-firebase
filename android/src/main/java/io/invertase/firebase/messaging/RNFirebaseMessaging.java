@@ -30,6 +30,7 @@ import io.invertase.firebase.Utils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.List;
 import java.util.Set;
 
 public class RNFirebaseMessaging extends ReactContextBaseJavaModule implements LifecycleEventListener, ActivityEventListener {
@@ -242,12 +243,45 @@ public class RNFirebaseMessaging extends ReactContextBaseJavaModule implements L
     }, intentFilter);
   }
 
+  public static WritableMap fromBundle(Bundle bundle) {
+    WritableMap map = Arguments.createMap();
+    for (String key : bundle.keySet()) {
+      Object value = bundle.get(key);
+      if (value == null) {
+        map.putNull(key);
+      } else if (value.getClass().isArray()) {
+        map.putArray(key, Arguments.fromArray(value));
+      } else if (value instanceof String) {
+        map.putString(key, (String) value);
+      } else if (value instanceof Number) {
+        if (value instanceof Integer) {
+          map.putInt(key, (Integer) value);
+        } else {
+          map.putDouble(key, ((Number) value).doubleValue());
+        }
+      } else if (value instanceof Boolean) {
+        map.putBoolean(key, (Boolean) value);
+      } else if (value instanceof Bundle) {
+        map.putMap(key, fromBundle((Bundle) value));
+      } else if (value instanceof List) {
+        map.putArray(key, Arguments.fromList((List) value));
+      } else {
+        try {
+          map.putString(key, value.toString());
+        } catch(Exception e) {
+          throw new IllegalArgumentException("Could not convert " + value.getClass());
+        }
+      }
+    }
+    return map;
+  }
+
   private WritableMap parseIntent(Intent intent) {
     WritableMap params;
     Bundle extras = intent.getExtras();
     if (extras != null) {
       try {
-        params = Arguments.fromBundle(extras);
+        params = fromBundle(extras);
       } catch (Exception e) {
         Log.e(TAG, e.getMessage());
         params = Arguments.createMap();
